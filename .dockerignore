@@ -1,0 +1,11 @@
+node_modules/
+test_logs/
+logs/
+.vscode/
+coverage/
+.nyc_output/
+.github/
+lib/
+test-results.xml
+yarn-error.log
+.git

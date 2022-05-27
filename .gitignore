@@ -1,0 +1,12 @@
+.idea/
+dist/
+node_modules/
+lib/
+build
+*.bak
+.DS_Store
+doc
+report.xml
+yarn-error.log
+server.pid
+test-results.xml

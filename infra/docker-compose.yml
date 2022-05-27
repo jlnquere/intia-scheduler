@@ -1,0 +1,70 @@
+version: '3'
+
+services:
+  dozzle:
+    container_name: dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DOZZLE_BASE=/logs
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.dozzle.loadbalancer.server.port=8080"
+      - "traefik.http.routers.dozzle.rule=Host(`${DOMAIN}`) && PathPrefix(`/logs`)"
+      - "traefik.http.routers.dozzle.entrypoints=websecure"
+      - "traefik.http.routers.dozzle.tls.certresolver=acmeresolver"
+      - "traefik.http.middlewares.dozzle-auth.basicauth.users=${DOZZLEAUTH}"
+      - "traefik.http.routers.dozzle.middlewares=dozzle-auth"
+  scheduler:
+    image: rg.fr-par.scw.cloud/webdpocs/intia-scheduler:latest
+    container_name: scheduler
+    restart: always
+    environment:
+      - SERVER_PORT=8080
+      - REDIS_URL=redis://redis:6379
+      - NODE_ENV=production
+    ports:
+      - '8080:8080' 
+    depends_on:
+      - redis
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.intiascheduler.loadbalancer.server.port=8080"
+      - "traefik.http.routers.intiascheduler.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.intiascheduler.entrypoints=websecure"
+      - "traefik.http.routers.intiascheduler.tls.certresolver=acmeresolver"
+  redis:
+    image: redis:7-alpine
+    restart: always
+    container_name: redis
+    ports:
+    - "6379:6379"
+  reverse-proxy:
+    container_name: proxy
+    image: traefik:v2.5
+    command:
+      - "--log.level=DEBUG"
+      - '--api=true'
+      - '--api.dashboard=true'
+      - '--api.insecure=false'
+      # Enabling docker provider
+      - "--providers.docker=true"
+      # Do not expose containers unless explicitly told so
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      - "--entrypoints.web.http.redirections.entrypoint.permanent=true"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.acmeresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.acmeresolver.acme.email=${LETSENCRYPTMAIL}"
+      - "--certificatesresolvers.acmeresolver.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.acmeresolver.acme.tlschallenge=true"
+    ports:
+      - "443:443"
+      - "80:80"
+    volumes:
+      - "./data/letsencrypt:/letsencrypt"
+      # So that Traefik can listen to the Docker events
+      - /var/run/docker.sock:/var/run/docker.sock

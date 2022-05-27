@@ -1,0 +1,6 @@
+{
+  "listeningPort": 8081,
+  "redis": {
+    "url": "redis://localhost:6380"
+  }
+}

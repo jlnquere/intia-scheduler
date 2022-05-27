@@ -1,0 +1,46 @@
+name: CD
+
+on: push
+
+jobs:
+  publish:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Login to docker repo
+        run: docker login rg.fr-par.scw.cloud/webdpocs -u nologin -p  ${{ secrets.DOCKER_PASSWORD }}
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
+      # In this step, this action saves a list of existing images,
+      # the cache is created without them in the post run.
+      # It also restores the cache if it exists.
+      - name: Docker cache
+        uses: satackey/action-docker-layer-caching@v0.0.11
+        with:
+          key: scheduler-docker-cache-${{ steps.extract_branch.outputs.branch }}-{hash}
+          restore-keys: |
+            scheduler-docker-cache-${{ steps.extract_branch.outputs.branch }}-
+        # Ignore the failure of a step and avoid terminating the job.
+        continue-on-error: true
+      - name: Publish Docker production image
+        if: github.ref == 'refs/heads/main'
+        run: ./devtools/publish.sh scheduler prod $GITHUB_RUN_NUMBER
+      - name: Publish Docker stage image
+        if: github.ref == 'refs/heads/dev'
+        run: ./devtools/publish.sh scheduler dev $GITHUB_RUN_NUMBER
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy new build via SSH
+        if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/dev'
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_SSH_HOST }}
+          username: ${{ secrets.DEPLOY_SSH_USERNAME }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: 22
+          script: cd infra/ && ./reload.sh
