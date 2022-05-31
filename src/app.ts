@@ -1,9 +1,10 @@
 import express, { NextFunction, Request, Response } from 'express';
-import config from './utils/config';
 import { healthCheckRequestHandler } from './utils/healthcheck';
-
+import recuringInvoice from './routers/recuringInvoice';
+import delayedEmail from './routers/delayedEmail';
 export async function createApp() {
   const app = express();
+  app.use(express.json());
 
   // This endpoints is used by docker (or any monitoring tool)
   // to know if the service is healthy
@@ -18,6 +19,9 @@ export async function createApp() {
 
     response.status(500).send(JSON.stringify(responseMessage || {}, null, 2));
   });
+
+  app.use('/api/v1/recuringInvoice', recuringInvoice);
+  app.use('/api/v1/delayedEmail', delayedEmail);
 
   return app;
 }

@@ -1,6 +1,6 @@
 {
   "listeningPort": 8081,
-  "redis": {
-    "url": "redis://localhost:6380"
+  "mongo": {
+    "url": "mongodb://127.0.0.1/scheduler"
   }
 }

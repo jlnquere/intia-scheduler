@@ -1,4 +1,5 @@
 import { createApp } from './app';
+import { Scheduler } from './scheduler';
 import config from './utils/config';
 
 async function run() {
@@ -18,5 +19,7 @@ async function run() {
       process.exit();
     });
   });
+
+  await Scheduler.setup();
 }
 run();

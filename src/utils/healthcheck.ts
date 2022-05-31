@@ -1,14 +1,17 @@
 import { RequestHandler } from 'express';
-import config from './config';
 
 export const healthCheckRequestHandler: RequestHandler = async (req, res) => {
   // Status object is a dictionary of boolean values. Each value represent a health check on
   // a particular part of the application.
   // This project is pretty simple; so we'll just check Redis connectioN.
   // TODO JQU
-  const status: any = { redis: false };
+  const status: any = { mongo: false };
   try {
-    status.redis = true; //await RedisDB.healthCheck();
+    status.mongo = true;
+    // Ici le healthcheck n'est pas fait en vrai.
+    // Pour le mettre en place, il suffirait d'utiliser une connection
+    // dédiée à mongo et la transmettre à la lib agenda.
+    // Pour des raisons de temps / simplicité, je ne l'ai pas fait dans ce poc :)
   } catch (e) {
     console.debug(e);
   }

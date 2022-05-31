@@ -1,6 +1,6 @@
 {
   "listeningPort": "SERVER_PORT",
-  "redis": {
-    "url": "REDIS_URL"
+  "mongo": {
+    "url": "MONGO_URL"
   }
 }
